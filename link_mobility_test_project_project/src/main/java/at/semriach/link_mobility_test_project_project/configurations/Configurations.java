@@ -30,17 +30,9 @@ public class Configurations
     }
 
     @Bean
-    public ConnectionFactory connectionFactory() {
-        CachingConnectionFactory connectionFactory = new CachingConnectionFactory("localhost");
-        connectionFactory.setUsername("root");
-        connectionFactory.setPassword("root");
-        return connectionFactory;
-    }
-
-    @Bean
-    public RabbitAdmin rabbitAdmin()
+    public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory)
     {
-        return new RabbitAdmin(connectionFactory());
+        return new RabbitAdmin(connectionFactory);
     }
 
     @Bean
