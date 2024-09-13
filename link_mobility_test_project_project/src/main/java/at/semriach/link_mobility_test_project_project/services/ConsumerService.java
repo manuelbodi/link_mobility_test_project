@@ -13,28 +13,27 @@ import at.semriach.link_mobility_test_project_project.pojos.Message;
 import at.semriach.link_mobility_test_project_project.pojos.OutputLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ConsumerService
 {
     private final RabbitTemplate rabbitTemplate;
-    private final RabbitAdmin rabbitAdmin;
     private final OutputLock outputLock;
     private final ExecutorService executorServiceA = Executors.newFixedThreadPool(1);
     private final ExecutorService executorServiceB = Executors.newFixedThreadPool(1);
     private final ExecutorService executorServiceC = Executors.newFixedThreadPool(1);
-    private final List<Message> messageList = new ArrayList<>();
+    private static final List<Message> consumableMessageList = new ArrayList<>();
+    public static final List<Message> consumedMessageList = new ArrayList<>();
+    public static Long consumerCounter = 0L;
 
     public void startConsumingMessages()
     {
@@ -49,19 +48,20 @@ public class ConsumerService
         {
             try
             {
-                synchronized (messageList)
+                synchronized (consumableMessageList)
                 {
                     Message message = null;
                     try
                     {
-                        message = messageList.remove(0);
-                    }
-                    catch (IndexOutOfBoundsException e)
+                        message = consumableMessageList.remove(0);
+                    } catch (IndexOutOfBoundsException e)
                     {
                         message = (Message) rabbitTemplate.receiveAndConvert("messageQueue");
                     }
                     if (message != null && message.getRecipient().startsWith(recipientPrefix))
                     {
+                        consumerCounter++;
+                        consumedMessageList.add(message);
                         synchronized (outputLock)
                         {
                             log.info("Consumed message in thread {}: {}", Thread.currentThread().getName(), message);
@@ -70,11 +70,10 @@ public class ConsumerService
                     }
                     if (message != null && !message.getRecipient().startsWith(recipientPrefix))
                     {
-                        messageList.add(message);
+                        consumableMessageList.add(message);
                     }
                 }
-            }
-            catch (InterruptedException e)
+            } catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
                 return;

@@ -11,10 +11,11 @@ package at.semriach.link_mobility_test_project_project.services;
 
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class StartApplicationService
 {
     private final ProducerService producerService;
@@ -23,7 +24,7 @@ public class StartApplicationService
     @PostConstruct
     public void init()
     {
-        producerService.startProducingMessages();
+        // producerService.startProducingMessages(0L);
         consumerService.startConsumingMessages();
     }
 }

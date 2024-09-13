@@ -14,34 +14,48 @@ import at.semriach.link_mobility_test_project_project.pojos.OutputLock;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
 import java.util.UUID;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
 
 @Service
 @Slf4j
-@RequiredArgsConstructor
+@RequiredArgsConstructor(onConstructor = @__(@Autowired))
 public class ProducerService
 {
     private final RabbitTemplate rabbitTemplate;
     private final OutputLock outputLock;
     private final ExecutorService executorService = Executors.newFixedThreadPool(5);
+    public static Long producerCounter = 0L;
 
-    public void startProducingMessages()
+    public void startProducingMessages(Long bound)
     {
-        for (int i = 0; i < 5; i++) {
-            executorService.submit(this::produceMessagesContinuously);
+        for (int i = 0; i < 5; i++)
+        {
+            executorService.submit(() -> produceMessages(bound));
         }
     }
 
-    private void produceMessagesContinuously()
+    private void produceMessages(Long bound)
     {
         while (true)
         {
             try
             {
+                if (!bound.equals(0L))
+                {
+                    synchronized (producerCounter)
+                    {
+                        if (producerCounter.equals(bound))
+                        {
+                            return;
+                        }
+                        producerCounter++;
+                    }
+                }
                 Message message = new Message(UUID.randomUUID(),
                         "sender" + Thread.currentThread().getId(),
                         "recipient" + (char) ('A' + (int) (Math.random() * 3)),
@@ -52,8 +66,7 @@ public class ProducerService
                     log.info("Produced message: {}", message);
                 }
                 Thread.sleep(1000);
-            }
-            catch (InterruptedException e)
+            } catch (InterruptedException e)
             {
                 Thread.currentThread().interrupt();
                 return;
