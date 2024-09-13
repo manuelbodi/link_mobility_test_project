@@ -14,4 +14,4 @@ To produce messages through the endpoint please use the post endpoint with the u
 }"
 Please use "recipientA", "recipientB" or "recipientC" as recipient because you wanted my consumers to consume only messages with a special character and as i understand no further (generell) consumer
 
-To let my application produce messages continiously please remove the "// " before the statement "" in the class "StartApplicationService.java" in the directory "/src/main/java/at/semriach/link_mobility_test_project_project/services/"
+To let my application produce messages continiously please remove the "// " before the statement "producerService.startProducingMessages(0L);" in the class "StartApplicationService.java" in the directory "/src/main/java/at/semriach/link_mobility_test_project_project/services/"
